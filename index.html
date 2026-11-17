@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>La Corteza · Pan de masa madre · Del horno al corazón</title>
+  <meta name="description" content="La Corteza: hogazas artesanales de masa madre. Del horno al corazón, corteza que enamora. Compra 10 piezas y llévate la 11ª gratis.">
+  <link rel="icon" href="img/sello.jpg">
+
+  <!-- Tipografías: Italiana (títulos), Pinyon Script (acentos) y Jost (texto) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Italiana&family=Jost:wght@300;400;500&family=Pinyon+Script&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- ============ 1. BARRA DE ANUNCIOS (rotativa) ============ -->
+  <div class="announce" role="region" aria-label="Anuncios">
+    <div class="announce__track">
+      <p class="announce__item is-active">Compra <strong>10 piezas</strong> y la <strong>11ª es gratis</strong> · tiempo limitado</p>
+      <p class="announce__item">Del horno al corazón, corteza que enamora</p>
+      <p class="announce__item">Síguenos en Instagram <a href="https://www.instagram.com/lacorteza025" target="_blank" rel="noopener">@lacorteza025</a></p>
+    </div>
+  </div>
+
+  <!-- ============ 2. ENCABEZADO / NAVEGACIÓN ============ -->
+  <header class="header" id="header">
+    <div class="header__inner container">
+      <button class="icon-btn header__burger" id="menuOpen" aria-label="Abrir menú" aria-controls="drawer" aria-expanded="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h18M3 12h18M3 17h18"/></svg>
+      </button>
+
+      <a href="#inicio" class="brand" aria-label="La Corteza, inicio">
+        <img src="img/logo.png" alt="Panadería La Corteza · Masa madre" class="brand__logo" width="634" height="242">
+        <span class="brand__slogan">Del horno al corazón, <br>corteza que enamora</span>
+      </a>
+
+      <nav class="nav" aria-label="Principal">
+        <ul class="nav__list">
+          <li class="nav__item has-mega">
+            <a href="#panes" class="nav__link">Panes</a>
+            <!-- Mega menú: se despliega al pasar el cursor -->
+            <div class="mega">
+              <div class="mega__inner container">
+                <a href="#p-hogaza-clasica" class="mega__card"><img src="img/hogaza-clasica.jpg" alt="" loading="lazy"><span>Hogaza Clásica</span></a>
+                <a href="#p-arandano-rojo" class="mega__card"><img src="img/arandano-rojo.jpg" alt="" loading="lazy"><span>Arándano Rojo</span></a>
+                <a href="#p-sonora-picante" class="mega__card"><img src="img/sonora-picante.jpg" alt="" loading="lazy"><span>Sonora Picante</span></a>
+                <a href="#p-hierbas-del-huerto" class="mega__card"><img src="img/hierbas-del-huerto.jpg" alt="" loading="lazy"><span>Hierbas del Huerto</span></a>
+                <a href="#p-cacao-naranja" class="mega__card"><img src="img/cacao-naranja.jpg" alt="" loading="lazy"><span>Cacao y Naranja</span></a>
+                <a href="#p-campo-semillas" class="mega__card"><img src="img/campo-semillas.jpg" alt="" loading="lazy"><span>Campo de Semillas</span></a>
+              </div>
+            </div>
+          </li>
+          <li class="nav__item"><a href="#oferta" class="nav__link">Oferta</a></li>
+          <li class="nav__item"><a href="#nosotros" class="nav__link">Nosotros</a></li>
+          <li class="nav__item"><a href="#contacto" class="nav__link">Contacto</a></li>
+        </ul>
+      </nav>
+
+      <div class="header__actions">
+        <button class="icon-btn" id="searchOpen" aria-label="Buscar">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l5 5"/></svg>
+        </button>
+        <button class="icon-btn cart-btn" id="cartBtn" aria-label="Carrito, 0 productos">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1.2 12H6.2L5 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+          <span class="cart-btn__count" id="cartCount">0</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Buscador desplegable -->
+    <div class="search" id="search" hidden>
+      <div class="container search__inner">
+        <input type="search" id="searchInput" placeholder="¿Qué pan buscas? Arándano, cacao, semillas…" aria-label="Buscar productos">
+        <button class="icon-btn" id="searchClose" aria-label="Cerrar búsqueda">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <ul class="container search__results" id="searchResults"></ul>
+    </div>
+  </header>
+
+  <!-- Menú lateral para móvil -->
+  <div class="drawer" id="drawer" aria-hidden="true">
+    <div class="drawer__panel">
+      <button class="icon-btn drawer__close" id="menuClose" aria-label="Cerrar menú">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+      <nav aria-label="Móvil">
+        <a href="#panes">Panes</a>
+        <a href="#oferta">Oferta</a>
+        <a href="#nosotros">Nosotros</a>
+        <a href="#contacto">Contacto</a>
+      </nav>
+      <p class="drawer__foot">Del horno al corazón, corteza que enamora<br><a href="https://www.instagram.com/lacorteza025" target="_blank" rel="noopener">@lacorteza025</a></p>
+    </div>
+  </div>
+
+  <main id="inicio">
+
+    <!-- ============ 3. HERO ============ -->
+    <section class="hero">
+      <div class="hero__media">
+        <img src="img/portada.jpg" alt="Rebanadas de pan de masa madre con tomates rostizados y aceite de oliva">
+      </div>
+      <div class="hero__content">
+        <p class="script">Del horno al corazón</p>
+        <h1 class="display">El pan que se toma su tiempo</h1>
+        <p class="lead">Hogazas de masa madre con fermentación lenta, horneadas cada día y listas para llegar a tu mesa.</p>
+        <div class="btn-row">
+          <a href="#panes" class="btn btn--dark">Comprar ahora</a>
+          <a href="#nosotros" class="btn btn--ghost">Conócenos</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 4. CATÁLOGO (carrusel de productos) ============ -->
+    <section class="section" id="panes">
+      <div class="container">
+        <div class="section__head">
+          <div>
+            <p class="eyebrow">Catálogo</p>
+            <h2 class="h2">Nuestros panes</h2>
+          </div>
+          <div class="rail-controls">
+            <button class="icon-btn round" data-rail="prev" aria-label="Anterior">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+            </button>
+            <button class="icon-btn round" data-rail="next" aria-label="Siguiente">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Para agregar un pan nuevo, duplica un <article class="card"> y cambia id, data-name, data-price, imagen y textos -->
+        <div class="rail" id="rail">
+          <article class="card" id="p-hogaza-clasica" data-name="Hogaza Clásica" data-price="150">
+            <div class="card__media">
+              <img src="img/hogaza-clasica.jpg" alt="Hogaza clásica de masa madre con cortes en forma de espiga" loading="lazy">
+              <span class="badge">La Corteza</span>
+            </div>
+            <div class="card__body">
+              <h3 class="card__title">Hogaza Clásica</h3>
+              <p class="card__desc">Nuestra masa madre en su forma más pura. Corteza gruesa y crujiente, miga abierta y aromática, con la acidez suave que da la fermentación lenta. La base de todo lo que hacemos.</p>
+              <div class="card__foot">
+                <span class="price">$150 MXN</span>
+                <button class="btn btn--small add-to-cart">Agregar</button>
+              </div>
+            </div>
+          </article>
+
+          <article class="card" id="p-arandano-rojo" data-name="Arándano Rojo" data-price="180">
+            <div class="card__media">
+              <img src="img/arandano-rojo.jpg" alt="Hogaza de masa madre con arándanos rojos" loading="lazy">
+            </div>
+            <div class="card__body">
+              <h3 class="card__title">Arándano Rojo</h3>
+              <p class="card__desc">Masa madre con arándanos deshidratados que aportan un toque ácido y dulce. Miga suave, corteza dorada. Perfecta para tostadas con queso crema o para compartir en el desayuno.</p>
+              <div class="card__foot">
+                <span class="price">$180 MXN</span>
+                <button class="btn btn--small add-to-cart">Agregar</button>
+              </div>
+            </div>
+          </article>
+
+          <article class="card" id="p-sonora-picante" data-name="Sonora Picante" data-price="180">
+            <div class="card__media">
+              <img src="img/sonora-picante.jpg" alt="Hogaza de masa madre con queso cheddar y jalapeño" loading="lazy">
+            </div>
+            <div class="card__body">
+              <h3 class="card__title">Sonora Picante</h3>
+              <p class="card__sub">Cheddar y jalapeño</p>
+              <p class="card__desc">Hogaza con queso cheddar y jalapeño. La corteza se dora con el queso y la miga queda jugosa con un picor medio y amable. Para quienes buscan algo con carácter.</p>
+              <div class="card__foot">
+                <span class="price">$180 MXN</span>
+                <button class="btn btn--small add-to-cart">Agregar</button>
+              </div>
+            </div>
+          </article>
+
+          <article class="card" id="p-hierbas-del-huerto" data-name="Hierbas del Huerto" data-price="180">
+            <div class="card__media">
+              <img src="img/hierbas-del-huerto.jpg" alt="Hogaza de masa madre con ajo y hierbas, junto a romero y una cabeza de ajo" loading="lazy">
+            </div>
+            <div class="card__body">
+              <h3 class="card__title">Hierbas del Huerto</h3>
+              <p class="card__sub">Ajo y hierbas</p>
+              <p class="card__desc">Hogaza aromática con ajo y hierbas frescas. El aroma llena la cocina desde que se corta. Combina con aceite de oliva, sopas, pastas y quesos.</p>
+              <div class="card__foot">
+                <span class="price">$180 MXN</span>
+                <button class="btn btn--small add-to-cart">Agregar</button>
+              </div>
+            </div>
+          </article>
+
+          <article class="card" id="p-cacao-naranja" data-name="Cacao y Naranja" data-price="180">
+            <div class="card__media">
+              <img src="img/cacao-naranja.jpg" alt="Hogaza de cacao decorada con rodajas de naranja caramelizada" loading="lazy">
+            </div>
+            <div class="card__body">
+              <h3 class="card__title">Cacao y Naranja</h3>
+              <p class="card__sub">Chocolate y naranja</p>
+              <p class="card__desc">Hogaza con chocolate semiamargo y naranja. Aroma cítrico, corazón de cacao y corteza crujiente. Para el postre, el café de la tarde o para regalar.</p>
+              <div class="card__foot">
+                <span class="price">$180 MXN</span>
+                <button class="btn btn--small add-to-cart">Agregar</button>
+              </div>
+            </div>
+          </article>
+
+          <article class="card" id="p-campo-semillas" data-name="Campo de Semillas" data-price="180">
+            <div class="card__media">
+              <img src="img/campo-semillas.jpg" alt="Hogaza de masa madre cubierta de semillas tostadas" loading="lazy">
+            </div>
+            <div class="card__body">
+              <h3 class="card__title">Campo de Semillas</h3>
+              <p class="card__sub">Girasol, linaza y ajonjolí</p>
+              <p class="card__desc">Hogaza con tres semillas tostadas: girasol, linaza y ajonjolí. Crujiente por fuera, suave por dentro y con un sabor profundo a granos tostados.</p>
+              <div class="card__foot">
+                <span class="price">$180 MXN</span>
+                <button class="btn btn--small add-to-cart">Agregar</button>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 5. VALORES (banner a todo lo ancho) ============ -->
+    <section class="values" id="nosotros" aria-label="Nuestros valores">
+      <img src="Imagenes/Valores.png" alt="Nuestros valores: autenticidad, calidad, tradición y bienestar. Representan la esencia de nuestra panadería artesanal." loading="lazy">
+    </section>
+
+    <!-- ============ 6. HISTORIA / PROCESO ============ -->
+    <section class="section">
+      <div class="container story">
+        <div class="story__logo">
+          <img src="Imagenes/Logo.jpg" alt="Logotipo Panadería La Corteza" loading="lazy">
+        </div>
+        <div class="story__text">
+          <p class="eyebrow">Nuestra historia</p>
+          <h2 class="h2">Hecho a mano, sin prisa</h2>
+          <p>En La Corteza creemos que el buen pan no se apresura. Cada pieza nace de una masa madre viva, se fermenta lentamente y se hornea a diario para llegar fresca a tu mesa.</p>
+          <ol class="steps">
+            <li><span class="steps__n">01</span><div><h3>Masa madre</h3><p>Cultivo natural de harina y agua, sin levaduras comerciales.</p></div></li>
+            <li><span class="steps__n">02</span><div><h3>Fermentación lenta</h3><p>Horas de reposo que desarrollan sabor, aroma y digestibilidad.</p></div></li>
+            <li><span class="steps__n">03</span><div><h3>Horneado diario</h3><p>Pan recién salido del horno todos los días.</p></div></li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 7. OFERTA 10 + 1 ============ -->
+    <section class="offer" id="oferta">
+      <div class="container offer__inner">
+        <p class="eyebrow">Por tiempo limitado</p>
+        <h2 class="offer__title">Compra 10 piezas<br>y la <em>11ª</em> es gratis</h2>
+        <p class="offer__text">Arma tu pedido con tus panes favoritos, combínalos como quieras y al llegar a 10 piezas te regalamos una más.</p>
+
+        <!-- Progreso hacia la pieza gratis (se actualiza con el carrito) -->
+        <div class="offer__progress" aria-live="polite">
+          <div class="offer__bar"><span id="offerFill"></span></div>
+          <p id="offerMsg">Llevas 0 de 10 piezas.</p>
+        </div>
+
+        <a href="#panes" class="btn btn--light">Armar mi pedido</a>
+      </div>
+    </section>
+
+    <!-- ============ 8. NEWSLETTER ============ -->
+    <section class="newsletter">
+      <div class="container newsletter__inner">
+        <div>
+          <p class="script">Recién salido del horno</p>
+          <h2 class="h2">Recibe nuestras novedades</h2>
+        </div>
+        <form class="newsletter__form" id="newsletterForm" novalidate>
+          <label for="nlEmail" class="sr-only">Correo electrónico</label>
+          <input type="email" id="nlEmail" placeholder="tu@correo.com" required>
+          <button type="submit" class="btn btn--light">Suscribirme</button>
+          <p class="newsletter__msg" id="nlMsg" role="status"></p>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============ 9. PIE DE PÁGINA ============ -->
+  <footer class="footer" id="contacto">
+    <div class="container footer__grid">
+      <div class="footer__brand">
+        <img src="img/logo.png" alt="Panadería La Corteza · Masa madre" width="634" height="242">
+        <p class="footer__slogan">Del horno al corazón,<br>corteza que enamora</p>
+      </div>
+      <div>
+        <h3>Panes</h3>
+        <ul>
+          <li><a href="#p-hogaza-clasica">Hogaza Clásica</a></li>
+          <li><a href="#p-arandano-rojo">Arándano Rojo</a></li>
+          <li><a href="#p-sonora-picante">Sonora Picante</a></li>
+          <li><a href="#p-hierbas-del-huerto">Hierbas del Huerto</a></li>
+          <li><a href="#p-cacao-naranja">Cacao y Naranja</a></li>
+          <li><a href="#p-campo-semillas">Campo de Semillas</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3>La Corteza</h3>
+        <ul>
+          <li><a href="#nosotros">Nosotros</a></li>
+          <li><a href="#oferta">Oferta 10 + 1</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3>Contacto</h3>
+        <ul>
+          <li><a href="tel:+526311302021">631-130-20-21</a></li>
+          <li><a href="https://www.instagram.com/lacorteza025" target="_blank" rel="noopener">Instagram · @lacorteza025</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="container footer__bottom">
+      <p>© <span id="year">2026</span> Panadería La Corteza · Del horno al corazón, corteza que enamora</p>
+      <a href="#inicio">Volver arriba ↑</a>
+    </div>
+  </footer>
+
+  <!-- Aviso flotante (carrito) -->
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
