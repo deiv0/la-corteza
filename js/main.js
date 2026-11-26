@@ -113,56 +113,284 @@ document.addEventListener('click', (e) => {
   }, 350);
 });
 
-/* ---------- Carrito + oferta 10 + 1 ---------- */
-const PROMO_META = 10; // piezas necesarias para la pieza gratis
+/* =========================================================
+   Carrito, oferta 10 + 1 y pedido por WhatsApp
+   ========================================================= */
+
+/* ---- Configuración: cambia aquí los datos del negocio ---- */
+const CONFIG = {
+  whatsapp: '526312485213',          // 52 + número a 10 dígitos (pruebas: 631-248-52-13)
+  promoMeta: 10,                      // por cada 10 piezas compradas, 1 gratis
+  diasAnticipacion: 1,                // pedidos con al menos 1 día de anticipación
+  puntos: ['Plaza Tec', 'Plaza San Carlos', 'Plaza Cumbres'],
+  storageKey: 'lacorteza-carrito',
+};
 
 (() => {
-  const count = $('#cartCount');
-  const btn = $('#cartBtn');
-  const toast = $('#toast');
-  const fill = $('#offerFill');
-  const offerMsg = $('#offerMsg');
-  let total = 0;
-  let timer;
+  const money = (n) => `$${n.toLocaleString('es-MX')} MXN`;
 
-  const notify = (msg) => {
-    toast.textContent = msg;
-    toast.classList.add('is-visible');
-    clearTimeout(timer);
-    timer = setTimeout(() => toast.classList.remove('is-visible'), 2600);
+  // Catálogo leído de las tarjetas del HTML (id, nombre, precio, imagen)
+  const catalog = Object.fromEntries($$('.card[data-name]').map((card) => [card.id, {
+    id: card.id,
+    name: card.dataset.name,
+    price: Number(card.dataset.price),
+    img: $('img', card).getAttribute('src'),
+  }]));
+
+  /* ---------- Estado (se guarda en el navegador) ---------- */
+  let state = { items: {}, free: [] };
+  try {
+    const saved = JSON.parse(localStorage.getItem(CONFIG.storageKey));
+    if (saved && saved.items) state = saved;
+  } catch (_) { /* sin almacenamiento disponible: el carrito vive en memoria */ }
+  // Descarta productos que ya no existan en el catálogo
+  Object.keys(state.items).forEach((id) => { if (!catalog[id]) delete state.items[id]; });
+  state.free = (state.free || []).filter((id) => catalog[id]);
+
+  const save = () => {
+    try { localStorage.setItem(CONFIG.storageKey, JSON.stringify(state)); } catch (_) { /* ignorar */ }
   };
 
-  // Mensaje según cuántas piezas lleva el cliente
+  const pieces = () => Object.values(state.items).reduce((a, b) => a + b, 0);
+  const total = () => Object.entries(state.items).reduce((s, [id, q]) => s + catalog[id].price * q, 0);
+  const freeEarned = () => Math.floor(pieces() / CONFIG.promoMeta);
+
+  // Ajusta la lista de piezas gratis al número ganado
+  const syncFree = () => {
+    const earned = freeEarned();
+    const first = Object.keys(state.items)[0] || Object.keys(catalog)[0];
+    state.free = state.free.slice(0, earned);
+    while (state.free.length < earned) state.free.push(first);
+  };
+
   const promoText = () => {
-    if (total >= PROMO_META) return '¡Listo! Tu pieza número 11 va por nuestra cuenta.';
-    const faltan = PROMO_META - total;
-    return `Te ${faltan === 1 ? 'falta 1 pieza' : `faltan ${faltan} piezas`} para tu pan gratis.`;
+    const resto = CONFIG.promoMeta - (pieces() % CONFIG.promoMeta);
+    const earned = freeEarned();
+    const ganadas = earned ? `¡Tienes ${earned} pieza${earned > 1 ? 's' : ''} gratis! ` : '';
+    return `${ganadas}Te ${resto === 1 ? 'falta 1 pieza' : `faltan ${resto} piezas`} para ${earned ? 'otra' : 'tu pan gratis'}.`;
   };
 
-  const updateOffer = () => {
-    fill.style.width = `${Math.min(total / PROMO_META, 1) * 100}%`;
-    offerMsg.textContent = total
-      ? `Llevas ${Math.min(total, PROMO_META)} de ${PROMO_META} piezas. ${promoText()}`
-      : `Llevas 0 de ${PROMO_META} piezas.`;
+  /* ---------- Elementos ---------- */
+  const el = {
+    cart: $('#cart'), list: $('#cartList'), empty: $('#cartEmpty'),
+    freeBox: $('#cartFree'), freeList: $('#cartFreeList'),
+    bar: $('#cartBar'), promo: $('#cartPromo'),
+    pieces: $('#cartPieces'), total: $('#cartTotal'), toCheckout: $('#toCheckout'),
+    count: $('#cartCount'), btn: $('#cartBtn'), toast: $('#toast'),
+    offerFill: $('#offerFill'), offerMsg: $('#offerMsg'),
+    title: $('#cartTitle'), back: $('#cartBack'),
+    form: $('#checkoutForm'), error: $('#checkoutError'),
+    date: $('#cDate'), points: $('#pickupPoints'),
+    sumPieces: $('#sumPieces'), sumTotal: $('#sumTotal'), retry: $('#waRetry'),
   };
 
+  let toastTimer;
+  const notify = (msg) => {
+    el.toast.textContent = msg;
+    el.toast.classList.add('is-visible');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.toast.classList.remove('is-visible'), 2600);
+  };
+
+  /* ---------- Pintar el carrito ---------- */
+  const render = () => {
+    syncFree();
+    save();
+    const n = pieces();
+
+    el.empty.hidden = n > 0;
+    el.list.innerHTML = Object.keys(state.items).map((id) => {
+      const p = catalog[id];
+      const q = state.items[id];
+      return `<li data-id="${id}">
+        <img src="${p.img}" alt="">
+        <div>
+          <p class="cart__name">${p.name}</p>
+          <p class="cart__unit">${money(p.price)} c/u</p>
+          <div class="qty" role="group" aria-label="Cantidad de ${p.name}">
+            <button type="button" data-act="dec" aria-label="Quitar uno">−</button>
+            <span>${q}</span>
+            <button type="button" data-act="inc" aria-label="Agregar uno">+</button>
+          </div>
+        </div>
+        <div class="cart__right">
+          <span class="cart__line">${money(p.price * q)}</span>
+          <button type="button" class="cart__remove" data-act="del">Quitar</button>
+        </div>
+      </li>`;
+    }).join('');
+
+    // Selectores de piezas gratis (el cliente elige cuál pan quiere)
+    el.freeBox.hidden = state.free.length === 0;
+    el.freeList.innerHTML = state.free.map((sel, i) => `
+      <label>Pieza gratis ${i + 1}
+        <select data-free="${i}">
+          ${Object.values(catalog).map((p) => `<option value="${p.id}"${p.id === sel ? ' selected' : ''}>${p.name}</option>`).join('')}
+        </select>
+      </label>`).join('');
+
+    // Progreso hacia la siguiente pieza gratis
+    const enCiclo = n % CONFIG.promoMeta;
+    const pct = n === 0 ? 0 : ((enCiclo === 0 ? CONFIG.promoMeta : enCiclo) / CONFIG.promoMeta) * 100;
+    el.bar.style.width = `${pct}%`;
+    el.offerFill.style.width = `${pct}%`;
+    el.promo.textContent = n ? promoText() : `Compra ${CONFIG.promoMeta} piezas y la 11ª es gratis.`;
+    el.offerMsg.textContent = n
+      ? `Llevas ${n} pieza${n > 1 ? 's' : ''}. ${promoText()}`
+      : `Llevas 0 de ${CONFIG.promoMeta} piezas.`;
+
+    const piecesLabel = `${n}${state.free.length ? ` + ${state.free.length} gratis` : ''}`;
+    el.pieces.textContent = piecesLabel;
+    el.sumPieces.textContent = piecesLabel;
+    el.total.textContent = money(total());
+    el.sumTotal.textContent = money(total());
+    el.toCheckout.disabled = n === 0;
+
+    el.count.textContent = n;
+    el.count.classList.toggle('has-items', n > 0);
+    el.btn.setAttribute('aria-label', `Carrito, ${n} productos`);
+  };
+
+  /* ---------- Abrir / cerrar y pasos ---------- */
+  const steps = $$('.cart__step', el.cart);
+  const titles = { items: 'Tu carrito', checkout: 'Datos de recogida', done: 'Pedido enviado' };
+  const goTo = (step) => {
+    steps.forEach((s) => { s.hidden = s.dataset.step !== step; });
+    el.title.textContent = titles[step];
+    el.back.hidden = step !== 'checkout';
+  };
+  const open = (step = 'items') => {
+    goTo(step);
+    el.cart.classList.add('is-open');
+    el.cart.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    $('#cartClose').focus();
+  };
+  const close = () => {
+    el.cart.classList.remove('is-open');
+    el.cart.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  };
+
+  el.btn.addEventListener('click', () => open());
+  $('#cartClose').addEventListener('click', close);
+  el.back.addEventListener('click', () => goTo('items'));
+  el.cart.addEventListener('click', (e) => {
+    if (e.target === el.cart || e.target.closest('[data-cart-close]')) close();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && el.cart.classList.contains('is-open')) close();
+  });
+
+  /* ---------- Acciones sobre productos ---------- */
   $$('.add-to-cart').forEach((b) => b.addEventListener('click', () => {
-    const name = b.closest('.card').dataset.name;
-    total += 1;
-    count.textContent = total;
-    count.classList.add('has-items');
-    count.classList.remove('bump'); void count.offsetWidth; count.classList.add('bump');
-    btn.setAttribute('aria-label', `Carrito, ${total} productos`);
-    updateOffer();
-    notify(`Agregaste ${name} · ${promoText()}`);
+    const card = b.closest('.card');
+    state.items[card.id] = (state.items[card.id] || 0) + 1;
+    render();
+    el.count.classList.remove('bump'); void el.count.offsetWidth; el.count.classList.add('bump');
+    notify(`Agregaste ${card.dataset.name} · ${promoText()}`);
   }));
 
-  btn.addEventListener('click', () => notify(
-    total ? `Tienes ${total} pieza(s) en el carrito · ${promoText()}`
-          : `Tu carrito está vacío · Compra ${PROMO_META} piezas y la 11ª es gratis`
-  ));
+  el.list.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-act]');
+    if (!btn) return;
+    const id = btn.closest('li').dataset.id;
+    if (btn.dataset.act === 'inc') state.items[id] += 1;
+    if (btn.dataset.act === 'dec') state.items[id] -= 1;
+    if (btn.dataset.act === 'del' || state.items[id] <= 0) delete state.items[id];
+    render();
+  });
 
-  updateOffer();
+  el.freeList.addEventListener('change', (e) => {
+    const sel = e.target.closest('select[data-free]');
+    if (sel) { state.free[Number(sel.dataset.free)] = sel.value; save(); }
+  });
+
+  /* ---------- Paso 2: datos de recogida ---------- */
+  el.points.innerHTML = CONFIG.puntos.map((p) => `
+    <label class="choice"><input type="radio" name="punto" value="${p}"> ${p}</label>`).join('');
+
+  // Fecha mínima = hoy + días de anticipación (en hora local)
+  const isoLocal = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const minDate = () => {
+    const d = new Date();
+    d.setDate(d.getDate() + CONFIG.diasAnticipacion);
+    return isoLocal(d);
+  };
+
+  el.toCheckout.addEventListener('click', () => {
+    el.date.min = minDate();
+    if (!el.date.value || el.date.value < el.date.min) el.date.value = el.date.min;
+    el.error.textContent = '';
+    goTo('checkout');
+  });
+
+  const fechaLarga = (iso) => {
+    const [y, m, d] = iso.split('-').map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' });
+  };
+
+  // Texto que se envía por WhatsApp (los *asteriscos* se ven en negritas)
+  const buildMessage = (data) => {
+    const lines = ['*Nuevo pedido · La Corteza*', ''];
+    Object.entries(state.items).forEach(([id, q]) => {
+      lines.push(`• ${q} × ${catalog[id].name} — ${money(catalog[id].price * q)}`);
+    });
+    if (state.free.length) {
+      const porPan = state.free.reduce((acc, id) => ({ ...acc, [id]: (acc[id] || 0) + 1 }), {});
+      lines.push('', '*Piezas gratis (10 + 1):*');
+      Object.entries(porPan).forEach(([id, q]) => lines.push(`• ${q} × ${catalog[id].name} — $0`));
+    }
+    lines.push(
+      '',
+      `*Piezas:* ${pieces()}${state.free.length ? ` + ${state.free.length} gratis` : ''}`,
+      `*Total:* ${money(total())}`,
+      '',
+      `*Nombre:* ${data.nombre}`,
+      `*Teléfono:* ${data.telefono}`,
+      `*Recoge en:* ${data.punto}`,
+      `*Día:* ${fechaLarga(data.fecha)}${data.hora ? ` · ${data.hora} h` : ''}`,
+    );
+    if (data.notas) lines.push(`*Notas:* ${data.notas}`);
+    lines.push('', '*Pago:* tarjeta o transferencia (Mercado Pago). Pendiente enviar enlace de pago.');
+    return lines.join('\n');
+  };
+
+  el.form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const f = el.form;
+    $$('.is-invalid', f).forEach((x) => x.classList.remove('is-invalid'));
+    const data = {
+      nombre: f.nombre.value.trim(),
+      telefono: f.telefono.value.replace(/\D/g, ''),
+      punto: (f.querySelector('input[name="punto"]:checked') || {}).value,
+      fecha: f.fecha.value,
+      hora: f.hora.value,
+      notas: f.notas.value.trim(),
+    };
+
+    const errors = [];
+    if (data.nombre.length < 3) { errors.push('tu nombre'); f.nombre.classList.add('is-invalid'); }
+    if (data.telefono.length !== 10) { errors.push('un teléfono de 10 dígitos'); f.telefono.classList.add('is-invalid'); }
+    if (!data.punto) errors.push('elegir un punto de recogida');
+    if (!data.fecha || data.fecha < minDate()) { errors.push('un día a partir de mañana'); f.fecha.classList.add('is-invalid'); }
+    if (!pieces()) errors.push('al menos un pan en el carrito');
+    if (errors.length) { el.error.textContent = `Falta: ${errors.join(', ')}.`; return; }
+
+    const url = `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(buildMessage(data))}`;
+    el.retry.href = url;
+    window.open(url, '_blank', 'noopener');
+    goTo('done');
+  });
+
+  $('#cartReset').addEventListener('click', () => {
+    state = { items: {}, free: [] };
+    el.form.reset();
+    render();
+    close();
+  });
+
+  render();
 })();
 
 /* ---------- Newsletter (validación simple) ---------- */

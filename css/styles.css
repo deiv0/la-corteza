@@ -320,9 +320,90 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .footer__bottom { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--line); font-size: .8rem; color: var(--ink-soft); }
 .footer__bottom p { margin: 0; }
 
+/* =========================================================
+   Carrito (panel lateral)
+   ========================================================= */
+.cart { position: fixed; inset: 0; z-index: 120; background: rgba(27,23,20,.45); opacity: 0; visibility: hidden; transition: opacity .3s, visibility .3s; }
+.cart.is-open { opacity: 1; visibility: visible; }
+.cart__panel {
+  position: absolute; top: 0; right: 0; bottom: 0; width: min(100vw, 440px);
+  background: var(--cream); display: flex; flex-direction: column;
+  transform: translateX(100%); transition: transform .4s var(--ease);
+}
+.cart.is-open .cart__panel { transform: none; }
+.cart__head { display: flex; align-items: center; gap: 8px; padding: 14px 16px 14px 24px; border-bottom: 1px solid var(--line); }
+.cart__back { margin-left: -12px; }
+.cart__back[hidden] { display: none; }
+.cart__title { flex: 1; font-family: var(--f-display); font-size: 1.6rem; text-transform: uppercase; letter-spacing: .04em; }
+.cart__step { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.cart__step[hidden] { display: none; }
+.cart__body { flex: 1; overflow-y: auto; padding: 20px 24px; }
+.cart__foot { padding: 16px 24px 22px; border-top: 1px solid var(--line); background: var(--cream); }
+
+.cart__empty { text-align: center; padding: 48px 0; color: var(--ink-soft); }
+.cart__empty[hidden] { display: none; }
+
+.cart__list li { display: grid; grid-template-columns: 72px 1fr auto; gap: 14px; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.cart__list img { width: 72px; height: 72px; object-fit: cover; }
+.cart__name { font-family: var(--f-display); font-size: 1.15rem; text-transform: uppercase; line-height: 1.15; }
+.cart__unit { font-size: .85rem; color: var(--ink-soft); }
+.cart__right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.cart__line { font-weight: 500; }
+
+.qty { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 999px; }
+.qty button { width: 30px; height: 30px; border: 0; background: none; border-radius: 50%; font-size: 1rem; line-height: 1; }
+.qty button:hover { background: rgba(0,0,0,.05); }
+.qty span { min-width: 24px; text-align: center; font-size: .9rem; font-weight: 500; }
+.cart__remove { border: 0; background: none; padding: 0; font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); text-decoration: underline; }
+
+.cart__free { margin-top: 22px; padding: 16px; background: var(--cream-2); border-radius: var(--radius); }
+.cart__free[hidden] { display: none; }
+.cart__free label { display: flex; align-items: center; gap: 10px; margin-top: 8px; font-size: .9rem; }
+.cart__free select { flex: 1; }
+
+.cart__promo p { margin: 8px 0 0; font-size: .85rem; color: var(--ink-soft); }
+.cart__bar { background: var(--line); }
+.cart__bar span { background: var(--gold); }
+.cart__totals { margin: 14px 0 16px; }
+.cart__totals > div { display: flex; justify-content: space-between; font-size: .95rem; }
+.cart__totals dd { margin: 0; }
+.cart__total { font-size: 1.15rem !important; font-weight: 500; margin-top: 4px; }
+
+.btn--block { width: 100%; }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+.btn--whatsapp { background: #1f8f4e; border-color: #1f8f4e; color: #fff; gap: 10px; }
+.btn--whatsapp:hover { background: #17733e; border-color: #17733e; }
+.btn--whatsapp svg { width: 20px; height: 20px; fill: currentColor; }
+
+/* Formulario */
+.cart__note { font-size: .9rem; color: var(--ink-soft); }
+.field { margin: 0 0 16px; padding: 0; border: 0; min-width: 0; }
+.field label, .field legend { display: block; margin-bottom: 6px; font-size: .72rem; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; }
+.optional { text-transform: none; letter-spacing: 0; font-weight: 300; color: var(--ink-soft); }
+.field input, .field textarea, .cart__free select {
+  width: 100%; padding: .7em .9em; border: 1px solid var(--line); border-radius: var(--radius);
+  background: #fff; font: inherit; font-size: .95rem; color: var(--ink);
+}
+.field input:focus, .field textarea:focus, .cart__free select:focus { outline: none; border-color: var(--gold); }
+.field .is-invalid { border-color: #b3261e; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.choices { display: grid; gap: 8px; }
+.choice { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius); background: #fff; cursor: pointer; font-size: .95rem; }
+.choice:has(input:checked) { border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); }
+.choice input { accent-color: var(--gold); width: 18px; height: 18px; margin: 0; }
+.field .choice { display: flex; margin: 0; font-size: .95rem; font-weight: 400; letter-spacing: 0; text-transform: none; }
+.cart__pay { padding: 14px 16px; background: var(--cream-2); border-radius: var(--radius); font-size: .9rem; color: var(--ink-soft); }
+.cart__pay p:last-child { margin: 0; }
+.form-error { color: #b3261e; font-size: .9rem; margin: 12px 0 0; min-height: 1.2em; }
+.cart__done { text-align: center; padding-top: 48px; }
+.cart__done .h2 { margin-bottom: 1rem; }
+
+@media (max-width: 400px) { .field-row { grid-template-columns: 1fr; } }
+@media (max-width: 560px) { .cart__title { font-size: 1.3rem; } }
+
 /* Toast */
 .toast {
-  position: fixed; left: 50%; bottom: 24px; z-index: 200;
+  position: fixed; left: 50%; bottom: 24px; z-index: 200; max-width: calc(100vw - 32px); text-align: center;
   transform: translate(-50%, 140%);
   background: var(--ink); color: var(--cream); padding: 12px 22px; border-radius: 999px; font-size: .9rem;
   transition: transform .4s var(--ease);
@@ -377,3 +458,8 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   html { scroll-behavior: auto; }
   .reveal { opacity: 1; transform: none; }
 }
+
+/* ---------- Ajustes de texto: justificado y títulos centrados ---------- */
+.hero__content .lead { text-align: justify; hyphens: auto; }
+.card__title, .card__sub { text-align: center; }
+.card__desc { text-align: justify; hyphens: auto; }
