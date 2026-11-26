@@ -7,7 +7,7 @@
    Mientras el ID esté vacío no se carga nada de Google: los
    eventos solo se muestran en la consola (nivel "Verbose").
    ========================================================= */
-const GA_MEASUREMENT_ID = ''; // ej. 'G-AB12CD34EF'
+const GA_MEASUREMENT_ID = 'G-6W2TNZ89QP';
 
 window.dataLayer = window.dataLayer || [];
 function gtag() { window.dataLayer.push(arguments); }
