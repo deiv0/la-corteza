@@ -181,8 +181,19 @@ const CONFIG = {
     title: $('#cartTitle'), back: $('#cartBack'),
     form: $('#checkoutForm'), error: $('#checkoutError'),
     date: $('#cDate'), points: $('#pickupPoints'),
-    sumPieces: $('#sumPieces'), sumTotal: $('#sumTotal'), retry: $('#waRetry'),
+    sumPieces: $('#sumPieces'), sumTotal: $('#sumTotal'),
+    pay: $('#payForm'), payError: $('#payError'), paySubmit: $('#paySubmit'),
+    payPieces: $('#payPieces'), payTotal: $('#payTotal'),
+    card: $('#pCard'), exp: $('#pExp'), cvv: $('#pCvv'), cardBrand: $('#cardBrand'),
+    bankRef: $('#bankRef'), bankAmount: $('#bankAmount'),
+    waSend: $('#waSend'),
   };
+
+  // Productos del carrito en formato de Google Analytics 4
+  const gaItems = () => Object.entries(state.items).map(([id, q]) => ({
+    item_id: id, item_name: catalog[id].name, item_brand: 'La Corteza', price: catalog[id].price, quantity: q,
+  }));
+  const gaCart = (extra = {}) => ({ currency: 'MXN', value: total(), items: gaItems(), ...extra });
 
   let toastTimer;
   const notify = (msg) => {
@@ -244,6 +255,9 @@ const CONFIG = {
     el.sumPieces.textContent = piecesLabel;
     el.total.textContent = money(total());
     el.sumTotal.textContent = money(total());
+    el.payPieces.textContent = piecesLabel;
+    el.payTotal.textContent = money(total());
+    el.bankAmount.textContent = money(total());
     el.toCheckout.disabled = n === 0;
 
     el.count.textContent = n;
@@ -253,11 +267,15 @@ const CONFIG = {
 
   /* ---------- Abrir / cerrar y pasos ---------- */
   const steps = $$('.cart__step', el.cart);
-  const titles = { items: 'Tu carrito', checkout: 'Datos de recogida', done: 'Pedido enviado' };
+  const titles = { items: 'Tu carrito', checkout: 'Datos de recogida', payment: 'Pago', done: 'Pedido confirmado' };
+  const prev = { checkout: 'items', payment: 'checkout' };
+  let current = 'items';
   const goTo = (step) => {
+    current = step;
     steps.forEach((s) => { s.hidden = s.dataset.step !== step; });
     el.title.textContent = titles[step];
-    el.back.hidden = step !== 'checkout';
+    el.back.hidden = !prev[step];
+    $('.cart__panel', el.cart).scrollTop = 0;
   };
   const open = (step = 'items') => {
     goTo(step);
@@ -272,9 +290,12 @@ const CONFIG = {
     document.body.style.overflow = '';
   };
 
-  el.btn.addEventListener('click', () => open());
+  el.btn.addEventListener('click', () => {
+    open();
+    if (pieces()) track('view_cart', gaCart());
+  });
   $('#cartClose').addEventListener('click', close);
-  el.back.addEventListener('click', () => goTo('items'));
+  el.back.addEventListener('click', () => { if (prev[current]) goTo(prev[current]); });
   el.cart.addEventListener('click', (e) => {
     if (e.target === el.cart || e.target.closest('[data-cart-close]')) close();
   });
@@ -289,15 +310,22 @@ const CONFIG = {
     render();
     el.count.classList.remove('bump'); void el.count.offsetWidth; el.count.classList.add('bump');
     notify(`Agregaste ${card.dataset.name} · ${promoText()}`);
+    const p = catalog[card.id];
+    track('add_to_cart', { currency: 'MXN', value: p.price, items: [{ item_id: p.id, item_name: p.name, item_brand: 'La Corteza', price: p.price, quantity: 1 }] });
   }));
 
   el.list.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-act]');
     if (!btn) return;
     const id = btn.closest('li').dataset.id;
+    const p = catalog[id];
+    const antes = state.items[id];
     if (btn.dataset.act === 'inc') state.items[id] += 1;
     if (btn.dataset.act === 'dec') state.items[id] -= 1;
     if (btn.dataset.act === 'del' || state.items[id] <= 0) delete state.items[id];
+    const diff = (state.items[id] || 0) - antes;
+    const item = { item_id: id, item_name: p.name, item_brand: 'La Corteza', price: p.price, quantity: Math.abs(diff) };
+    track(diff > 0 ? 'add_to_cart' : 'remove_from_cart', { currency: 'MXN', value: p.price * Math.abs(diff), items: [item] });
     render();
   });
 
@@ -323,6 +351,7 @@ const CONFIG = {
     if (!el.date.value || el.date.value < el.date.min) el.date.value = el.date.min;
     el.error.textContent = '';
     goTo('checkout');
+    track('begin_checkout', gaCart());
   });
 
   const fechaLarga = (iso) => {
@@ -352,8 +381,14 @@ const CONFIG = {
       `*Día:* ${fechaLarga(data.fecha)}${data.hora ? ` · ${data.hora} h` : ''}`,
     );
     if (data.notas) lines.push(`*Notas:* ${data.notas}`);
-    lines.push('', '*Pago:* tarjeta o transferencia (Mercado Pago). Pendiente enviar enlace de pago.');
+    lines.push('', `*Folio:* ${data.folio}`, `*Pago:* ${data.pagoTexto} (simulación)`);
     return lines.join('\n');
+  };
+
+  let pedido = null; // datos de recogida validados (paso 2)
+  const nuevoFolio = () => {
+    const d = new Date();
+    return `LC-${isoLocal(d).slice(2).replace(/-/g, '')}-${String(Math.floor(Math.random() * 9000) + 1000)}`;
   };
 
   el.form.addEventListener('submit', (e) => {
@@ -377,18 +412,125 @@ const CONFIG = {
     if (!pieces()) errors.push('al menos un pan en el carrito');
     if (errors.length) { el.error.textContent = `Falta: ${errors.join(', ')}.`; return; }
 
-    const url = `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(buildMessage(data))}`;
-    el.retry.href = url;
-    window.open(url, '_blank', 'noopener');
-    goTo('done');
+    pedido = { ...data, folio: (pedido && pedido.folio) || nuevoFolio() };
+    el.bankRef.textContent = pedido.folio;
+    actualizarMetodo();
+    goTo('payment');
+    track('add_shipping_info', gaCart({ shipping_tier: data.punto }));
   });
 
-  $('#cartReset').addEventListener('click', () => {
-    state = { items: {}, free: [] };
-    el.form.reset();
-    render();
-    close();
+  /* ---------- Paso 3: pago (SIMULACIÓN) ----------
+     Nada de esto se guarda ni se envía: solo se valida el formato.
+     Al integrar Mercado Pago, este paso se sustituye por su checkout. */
+  const metodo = () => el.pay.metodo.value;
+  const digits = (s) => s.replace(/\D/g, '');
+
+  const marca = (num) => {
+    if (/^4/.test(num)) return 'Visa';
+    if (/^(5[1-5]|2[2-7])/.test(num)) return 'Mastercard';
+    if (/^3[47]/.test(num)) return 'American Express';
+    return '';
+  };
+  const luhn = (num) => {
+    let sum = 0;
+    [...num].reverse().forEach((ch, i) => {
+      let n = Number(ch);
+      if (i % 2) { n *= 2; if (n > 9) n -= 9; }
+      sum += n;
+    });
+    return num.length >= 13 && sum % 10 === 0;
+  };
+
+  const actualizarMetodo = () => {
+    $$('.pay-panel', el.pay).forEach((p) => { p.hidden = p.dataset.panel !== metodo(); });
+    el.paySubmit.textContent = metodo() === 'tarjeta' ? `Pagar ${money(total())}` : 'Confirmar transferencia';
+    el.payError.textContent = '';
+  };
+  el.pay.addEventListener('change', (e) => { if (e.target.name === 'metodo') actualizarMetodo(); });
+
+  // Formato mientras se escribe: 4242 4242 4242 4242 y MM/AA
+  el.card.addEventListener('input', () => {
+    const n = digits(el.card.value).slice(0, 19);
+    el.card.value = n.replace(/(\d{4})(?=\d)/g, '$1 ');
+    el.cardBrand.textContent = marca(n);
   });
+  el.exp.addEventListener('input', () => {
+    const n = digits(el.exp.value).slice(0, 4);
+    el.exp.value = n.length > 2 ? `${n.slice(0, 2)}/${n.slice(2)}` : n;
+  });
+  el.cvv.addEventListener('input', () => { el.cvv.value = digits(el.cvv.value).slice(0, 4); });
+
+  $('#fillTestCard').addEventListener('click', () => {
+    const y = String((new Date().getFullYear() + 2) % 100).padStart(2, '0');
+    el.card.value = '4242 4242 4242 4242';
+    el.cardBrand.textContent = 'Visa';
+    el.pay.titular.value = pedido ? pedido.nombre : 'Cliente de prueba';
+    el.exp.value = `12/${y}`;
+    el.cvv.value = '123';
+  });
+
+  const validarPago = () => {
+    const f = el.pay;
+    $$('.is-invalid', f).forEach((x) => x.classList.remove('is-invalid'));
+    const errors = [];
+    if (metodo() === 'tarjeta') {
+      const num = digits(f.tarjeta.value);
+      if (!luhn(num)) { errors.push('un número de tarjeta válido'); f.tarjeta.classList.add('is-invalid'); }
+      if (f.titular.value.trim().length < 3) { errors.push('el nombre del titular'); f.titular.classList.add('is-invalid'); }
+      const [mm, yy] = f.vence.value.split('/').map(Number);
+      const now = new Date();
+      const vencida = !mm || mm > 12 || !yy || (2000 + yy) * 12 + mm < now.getFullYear() * 12 + now.getMonth() + 1;
+      if (vencida) { errors.push('una fecha de vencimiento vigente'); f.vence.classList.add('is-invalid'); }
+      const cvvLen = marca(num) === 'American Express' ? 4 : 3;
+      if (f.cvv.value.length !== cvvLen) { errors.push(`un CVV de ${cvvLen} dígitos`); f.cvv.classList.add('is-invalid'); }
+      return { errors, texto: `Tarjeta ${marca(num) || ''} •••• ${num.slice(-4)} — aprobado`.replace('  ', ' '), tipo: 'Tarjeta' };
+    }
+    if (!f.banco.value) { errors.push('el banco desde el que transfieres'); f.banco.classList.add('is-invalid'); }
+    if (!f.transferido.checked) errors.push('confirmar que ya hiciste la transferencia');
+    return { errors, texto: `Transferencia SPEI desde ${f.banco.value} — por verificar`, tipo: 'Transferencia' };
+  };
+
+  el.pay.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (!pedido || !pieces()) { goTo('checkout'); return; }
+    const { errors, texto, tipo } = validarPago();
+    if (errors.length) { el.payError.textContent = `Falta: ${errors.join(', ')}.`; return; }
+
+    track('add_payment_info', gaCart({ payment_type: tipo }));
+    el.paySubmit.disabled = true;
+    el.paySubmit.textContent = 'Procesando…';
+
+    setTimeout(() => { // simula la respuesta del procesador de pagos
+      const data = { ...pedido, pagoTexto: texto };
+      const esTarjeta = tipo === 'Tarjeta';
+      $('#doneTitle').textContent = esTarjeta ? 'Pago aprobado' : 'Transferencia registrada';
+      $('#doneText').textContent = esTarjeta
+        ? `Recibimos tu pago. Te esperamos en ${pedido.punto} el ${fechaLarga(pedido.fecha)}.`
+        : `En cuanto verifiquemos tu transferencia confirmamos tu pedido para recoger en ${pedido.punto} el ${fechaLarga(pedido.fecha)}.`;
+      $('#doneFolio').textContent = pedido.folio;
+      $('#donePay').textContent = esTarjeta ? texto.split(' — ')[0] : 'Transferencia (por verificar)';
+      $('#doneTotal').textContent = money(total());
+      el.waSend.href = `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(buildMessage(data))}`;
+
+      track('purchase', gaCart({ transaction_id: pedido.folio, payment_type: tipo }));
+
+      // Limpia los datos de pago: no se conservan en ningún lado
+      el.card.value = ''; el.cvv.value = ''; el.exp.value = ''; el.pay.titular.value = '';
+      el.cardBrand.textContent = '';
+      el.paySubmit.disabled = false;
+
+      // Pedido cerrado: se vacía el carrito para no pagarlo dos veces
+      state = { items: {}, free: [] };
+      pedido = null;
+      el.form.reset();
+      el.pay.reset();
+      actualizarMetodo();
+      render();
+      goTo('done');
+    }, 1400);
+  });
+
+  $('#cartReset').addEventListener('click', close);
 
   render();
 })();
@@ -402,6 +544,7 @@ const CONFIG = {
     e.preventDefault();
     if (!input.checkValidity()) { msg.textContent = 'Escribe un correo válido.'; return; }
     msg.textContent = '¡Gracias! Pronto recibirás nuestras promociones.';
+    track('generate_lead', { lead_source: 'newsletter' });
     form.reset();
   });
 })();
