@@ -119,7 +119,7 @@ document.addEventListener('click', (e) => {
 
 /* ---- Configuración: cambia aquí los datos del negocio ---- */
 const CONFIG = {
-  whatsapp: '526312485213',          // 52 + número a 10 dígitos (pruebas: 631-248-52-13)
+  whatsapp: '526572057761',          // 52 + número a 10 dígitos (657-205-7761)
   promoMeta: 10,                      // por cada 10 piezas compradas, 1 gratis
   diasAnticipacion: 1,                // pedidos con al menos 1 día de anticipación
   puntos: ['Plaza Tec', 'Plaza San Carlos', 'Plaza Cumbres'],
